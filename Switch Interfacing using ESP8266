@@ -1,0 +1,25 @@
+// Switch Interfacing using ESP8266 (NodeMCU)
+
+const int switchPin = D5;  // GPIO14
+const int ledPin = D2;     // GPIO2
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(switchPin, INPUT_PULLUP); // use internal pull-up
+  pinMode(ledPin, OUTPUT);
+  digitalWrite(ledPin, LOW);
+  Serial.println("Switch interfacing started...");
+}
+
+void loop() {
+  int switchState = digitalRead(switchPin);
+
+  if (switchState == LOW) {     // switch pressed
+    digitalWrite(ledPin, HIGH); // LED ON
+    Serial.println("Button Pressed!");
+  } else {
+    digitalWrite(ledPin, LOW);  // LED OFF
+  }
+
+  delay(100);
+}
