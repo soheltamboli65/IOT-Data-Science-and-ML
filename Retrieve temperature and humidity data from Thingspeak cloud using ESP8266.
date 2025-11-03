@@ -1,0 +1,68 @@
+#include <ESP8266WiFi.h>
+
+// ====== Your WiFi & ThingSpeak Details ======
+const char* ssid = "Your_WiFi_SSID";
+const char* password = "Your_WiFi_Password";
+const char* server = "api.thingspeak.com";
+String channelID = "YOUR_CHANNEL_ID";   // e.g., "2456781"
+String readAPIKey = "YOUR_READ_API_KEY";
+// ============================================
+
+WiFiClient client;
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\n✅ Connected to WiFi!");
+}
+
+void loop() {
+  if (client.connect(server, 80)) {
+    String url = "/channels/" + channelID + "/fields/1/last.txt?api_key=" + readAPIKey;
+
+    Serial.print("Requesting latest temperature data: ");
+    Serial.println(url);
+
+    // Get Temperature
+    client.print(String("GET ") + url + " HTTP/1.1\r\n" +
+                 "Host: " + server + "\r\n" +
+                 "Connection: close\r\n\r\n");
+    delay(1000);
+
+    while (client.available()) {
+      String line = client.readStringUntil('\r');
+      Serial.print("Temperature: ");
+      Serial.println(line);
+      break; // got the latest value
+    }
+    client.stop();
+  }
+
+  // Get Humidity (Field 2)
+  if (client.connect(server, 80)) {
+    String url = "/channels/" + channelID + "/fields/2/last.txt?api_key=" + readAPIKey;
+    Serial.print("Requesting latest humidity data: ");
+    Serial.println(url);
+
+    client.print(String("GET ") + url + " HTTP/1.1\r\n" +
+                 "Host: " + server + "\r\n" +
+                 "Connection: close\r\n\r\n");
+    delay(1000);
+
+    while (client.available()) {
+      String line = client.readStringUntil('\r');
+      Serial.print("Humidity: ");
+      Serial.println(line);
+      break;
+    }
+    client.stop();
+  }
+
+  Serial.println("------------------------------");
+  delay(20000);  // Fetch every 20 seconds
+}
