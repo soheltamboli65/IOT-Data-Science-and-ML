@@ -1,0 +1,48 @@
+#include <ESP8266WiFi.h>
+
+const char* ssid = "Your_WiFi_SSID";
+const char* pass = "Your_WiFi_Password";
+const char* apiKey = "YOUR_API_KEY";     // ThingSpeak Write API Key
+const char* server = "api.thingspeak.com";
+
+const int trig = D5;
+const int echo = D6;
+
+WiFiClient client;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(trig, OUTPUT);
+  pinMode(echo, INPUT);
+
+  WiFi.begin(ssid, pass);
+  Serial.print("Connecting");
+  while (WiFi.status() != WL_CONNECTED) { delay(300); Serial.print("."); }
+  Serial.println("\n✅ WiFi Connected!");
+}
+
+void loop() {
+  // Trigger ultrasonic pulse
+  digitalWrite(trig, LOW); delayMicroseconds(2);
+  digitalWrite(trig, HIGH); delayMicroseconds(10);
+  digitalWrite(trig, LOW);
+
+  long duration = pulseIn(echo, HIGH);
+  float distance = duration * 0.034 / 2; // cm
+
+  Serial.print("📏 Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+
+  // Send data to ThingSpeak
+  if (client.connect(server, 80)) {
+    String postStr = String("api_key=") + apiKey + "&field1=" + String(distance);
+    client.print("POST /update HTTP/1.1\nHost: api.thingspeak.com\nConnection: close\n");
+    client.print("Content-Type: application/x-www-form-urlencoded\nContent-Length: ");
+    client.print(postStr.length()); client.print("\n\n"); client.print(postStr);
+    Serial.println("✅ Data sent to ThingSpeak!");
+  }
+
+  client.stop();
+  delay(20000); // 20 sec delay per ThingSpeak rules
+}
